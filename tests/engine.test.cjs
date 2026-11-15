@@ -9,39 +9,31 @@ for(const f of ['calendar.js','tarot.js','engine.js','art.js'])vm.runInThisConte
 const E=global.Engine,O=global.Oracle;
 const p={nickname:'月下旅人',zodiac:'capricorn',year:2000};
 const date='2026-11-15';
-test('activities cover the full announced MI2 roster without introducing MI1-only skills',()=>{
-  const expected=['Attack','Strength','Defence','Hitpoints','Ranged','Magic','Slayer','Prayer',
-    'Woodcutting','Firemaking','Fishing','Cooking','Mining','Smithing','Fletching','Crafting','Runecrafting',
-    'Farming','Ranching','Hunting','Herblore','Thieving','Agility','Beastcrafting','Astrology',
-    'Summoning','Construction','Archaeology','Enchantment'];
-  assert.deepEqual(O.SKILLS.map(s=>s.en).sort(),expected.sort());
-  const covered=new Set(O.ACTIVITIES.flatMap(a=>a.skills));
-  assert.deepEqual([...covered].sort(),O.SKILLS.map(s=>s.id).sort());
-  for(const [id,name] of [['crafting','制造'],['beastcrafting','兽材工艺'],['agility','灵巧']]){
-    assert.equal(O.SKILLS.find(s=>s.id===id).name,name);
-    assert.equal(O.ACTIVITIES.find(a=>a.skills.includes(id)).name,name);
-  }
-});
-test('combat uses distinct activity slots instead of separate attack, strength, and defence recommendations',()=>{
-  const combat=O.ACTIVITIES.filter(a=>a.kind==='battle');
-  assert.deepEqual(combat.map(a=>a.id).sort(),['magic','melee','ranged','slayer']);
-  for(const id of ['attack','strength','defence'])assert.deepEqual(combat.filter(a=>a.skills.includes(id)).map(a=>a.id),['melee']);
-  for(const id of ['hitpoints','prayer'])assert.ok(combat.every(a=>a.skills.includes(id)));
-  for(const skill of O.SKILLS.filter(s=>!['hitpoints','prayer'].includes(s.id)))assert.equal(O.ACTIVITIES.filter(a=>a.skills.includes(skill.id)).length,1);
-  assert.deepEqual(O.ACTIVITIES.find(a=>a.id==='bank').skills,[]);
-  assert.equal(O.ACTIVITIES.length,26);
-});
-test('every activity has a reachable filter, original icon, complete advice, and supported tarot tags',()=>{
-  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  const filters=new Set([...html.matchAll(/data-filter="([^"]+)"/g)].map(m=>m[1]));
+test('fortune pool contains exactly the seven agreed activities, with one combined opening action',()=>{
+  assert.deepEqual(O.ACTIVITIES.map(a=>a.name),['伐木','采矿','钓鱼','狩猎','盗窃','刷怪寻宝','开箱']);
+  assert.equal(new Set(O.ACTIVITIES.map(a=>a.id)).size,7);
+  assert.deepEqual(Object.keys(E.TAGS).sort(),O.ACTIVITIES.map(a=>a.id).sort());
   const tags=new Set(Tarot.deck.flatMap(c=>[...c.up.tags,...c.reverse.tags]));
-  assert.equal(new Set(O.ACTIVITIES.map(a=>a.id)).size,O.ACTIVITIES.length);
   for(const a of O.ACTIVITIES){
-    assert.ok(filters.has(a.kind),a.id+' filter');assert.ok(Art.icons[a.icon],a.id+' icon');
-    assert.ok(a.good&&a.bad&&a.why,a.id+' readings');assert.ok(O.ELEMENTS.includes(a.element));
-    assert.ok(E.TAGS[a.id]?.length,a.id+' tags');assert.ok(E.TAGS[a.id].every(t=>tags.has(t)),a.id+' tag vocabulary');
+    assert.ok(Art.icons[a.icon],a.id+' icon');assert.ok(a.good&&a.bad&&a.why,a.id+' readings');
+    assert.ok(O.ELEMENTS.includes(a.element));assert.ok(E.TAGS[a.id].every(t=>tags.has(t)));
   }
-  assert.deepEqual(new Set(E.daily(p,date).activities.map(a=>a.id)),new Set(O.ACTIVITIES.map(a=>a.id)));
+});
+test('three auspicious and three inauspicious activities are stable, disjoint, and leave one unselected',()=>{
+  const omitted=new Set();
+  for(let i=0;i<84;i++){
+    const person={...p,nickname:'旅人'+i,zodiac:E.ZODIACS[i%12].id};
+    const day='2026-11-'+String(1+i%28).padStart(2,'0');
+    const r=E.daily(person,day);
+    assert.deepEqual(r,E.daily(JSON.parse(JSON.stringify(person)),day));
+    assert.equal(r.good.length,3);assert.equal(r.bad.length,3);
+    const shown=new Set([...r.good,...r.bad].map(a=>a.id));assert.equal(shown.size,6);
+    assert.ok(r.good.every(a=>a.label==='宜'));assert.ok(r.bad.every(a=>a.label==='忌'));
+    assert.ok(r.good.every(a=>r.bad.every(b=>a.score>=b.score)));
+    const neutral=r.activities.filter(a=>!shown.has(a.id));assert.equal(neutral.length,1);
+    assert.equal(neutral[0].label,'平');omitted.add(neutral[0].id);
+  }
+  assert.ok(omitted.size>3,'the unselected activity varies between readings');
 });
 test('78 unique cards, 22 major and 56 minor, complete readings',()=>{
   assert.equal(Tarot.deck.length,78);assert.equal(new Set(Tarot.deck.map(c=>c.id)).size,78);assert.equal(Tarot.deck.filter(c=>c.major).length,22);
@@ -101,7 +93,7 @@ test('recommendations never overlap; scores are finite and tarot can alter actua
   let changed=0;const initial=E.daily(p,date);for(let i=0;i<80;i++){
     const r=E.daily({...p,tarotOverride:E.hash('test-'+i)},date);
     assert.ok(r.activities.every(a=>Number.isFinite(a.score)&&a.score>=8&&a.score<=96));
-    assert.ok(r.good.every(a=>a.score>=60));assert.ok(r.bad.every(a=>a.score<45));
+    assert.equal(r.good.length,3);assert.equal(r.bad.length,3);
     assert.ok(!r.good.some(a=>r.bad.some(b=>b.id===a.id)));
     if(r.good.map(a=>a.id).join()!==initial.good.map(a=>a.id).join())changed++;
   }assert.ok(changed>50);

@@ -8,14 +8,9 @@
     ['capricorn','摩羯座','♑',1222,119],['aquarius','水瓶座','♒',120,218],['pisces','双鱼座','♓',219,320]
   ].map(([id,name,symbol,start,end])=>({id,name,symbol,start,end}));
   const TAGS={
-    wood:['gather','prepare'],fish:['gather','rest'],mine:['gather','explore'],farm:['gather','rest'],
-    smith:['craft','prepare'],cook:['craft','rest'],herb:['craft','learn'],
-    melee:['battle','prepare'],ranged:['battle','learn'],magic:['battle','explore'],thief:['explore','gather'],
-    fire:['craft','rest'],fletch:['craft','prepare'],craft:['craft','learn'],rune:['craft','prepare','learn'],
-    ranch:['gather','rest','prepare'],hunt:['gather','explore','prepare'],beast:['craft','explore'],
-    agility:['learn','prepare'],astro:['learn','rest'],summon:['learn','prepare','craft'],
-    build:['craft','prepare','rest'],archaeology:['explore','learn','gather'],enchant:['craft','learn'],
-    slayer:['battle','explore','prepare'],bank:['prepare','rest']
+    wood:['gather','prepare'],mine:['gather','explore'],fish:['gather','rest'],
+    hunt:['gather','explore','prepare'],thief:['explore','gather','learn'],
+    loot:['battle','explore'],open:['explore','rest']
   };
   const GAN_ELEMENT={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
   const HARMONY=['子丑','寅亥','卯戌','辰酉','巳申','午未'];
@@ -40,8 +35,8 @@
   function revealKey(profile,date){return hash(contextKey(profile,date)+'|'+tarotSeed(profile));}
   function matchPair(pairs,a,b){return pairs.some(pair=>pair===a+b||pair===b+a);}
   function daily(profile,date){const natal=birthChart(profile),calendar=O.calculate(date,natal.hourNumber),cards=draw(profile,date);const dayZhi=calendar.dayGanZhi[1];const branch=matchPair(HARMONY,natal.dayZhi,dayZhi)?{name:'六合',text:`日支${natal.dayZhi}与今日${dayZhi}相合，取协同、衔接之象。`}:matchPair(CLASH,natal.dayZhi,dayZhi)?{name:'六冲',text:`日支${natal.dayZhi}与今日${dayZhi}相冲，取调整、检查之象。`}:{name:'平行',text:'本命日支与流日日支未构成本作采用的六合或六冲。'};
-    const activities=O.ACTIVITIES.map((a,index)=>{const dayRel=O.relationship(calendar.dayElement,a.element),natalRel=O.relationship(natal.element,a.element),hexRel=O.relationship(calendar.body.element,a.element);const tags=TAGS[a.id];const base=50+dayRel.weight*.3+natalRel.weight*.25+hexRel.weight*.25;const cardParts=cards.map((c,i)=>{const overlap=c.reading.tags.filter(t=>tags.includes(t)).length;const elementBonus=c.element===a.element?1:0;const value=(overlap+elementBonus*.45)*[5,11,-11][i];return {name:c.name,reversed:c.reversed,role:['主运','顺势','留心'][i],value:Math.round(value)};});let branchBonus=branch.name==='六合'&&tags.includes('craft')?4:branch.name==='六冲'?(tags.includes('prepare')?4:tags.includes('battle')?-4:0):0;const score=Math.max(8,Math.min(96,Math.round(base+cardParts.reduce((s,c)=>s+c.value,0)+branchBonus)));return {...a,tags,index,score,dayRel,natalRel,hexRel,base:Math.round(base),cardParts,branchBonus,label:score>=60?'宜':score<45?'缓':'平'};}).sort((a,b)=>b.score-a.score||a.index-b.index);
-    return {date,natal,calendar,cards,branch,activities,good:activities.filter(a=>a.score>=60).slice(0,3),bad:activities.filter(a=>a.score<45).reverse().slice(0,3),title:cards[0].reading.key,summary:cards[0].reading.text,key:revealKey(profile,date)};
+    const activities=O.ACTIVITIES.map((a,index)=>{const dayRel=O.relationship(calendar.dayElement,a.element),natalRel=O.relationship(natal.element,a.element),hexRel=O.relationship(calendar.body.element,a.element);const tags=TAGS[a.id];const base=50+dayRel.weight*.3+natalRel.weight*.25+hexRel.weight*.25;const cardParts=cards.map((c,i)=>{const overlap=c.reading.tags.filter(t=>tags.includes(t)).length;const elementBonus=c.element===a.element?1:0;const value=(overlap+elementBonus*.45)*[5,11,-11][i];return {name:c.name,reversed:c.reversed,role:['主运','顺势','留心'][i],value:Math.round(value)};});let branchBonus=branch.name==='六合'&&tags.includes('craft')?4:branch.name==='六冲'?(tags.includes('prepare')?4:tags.includes('battle')?-4:0):0;const score=Math.max(8,Math.min(96,Math.round(base+cardParts.reduce((s,c)=>s+c.value,0)+branchBonus)));return {...a,tags,index,score,dayRel,natalRel,hexRel,base:Math.round(base),cardParts,branchBonus,tieBreak:rng('rank-v1|'+revealKey(profile,date)+'|'+a.id)()};}).sort((a,b)=>b.score-a.score||a.tieBreak-b.tieBreak||a.index-b.index).map((a,i)=>({...a,label:i<3?'宜':i>=4?'忌':'平'}));
+    return {date,natal,calendar,cards,branch,activities,good:activities.slice(0,3),bad:activities.slice(-3).reverse(),title:cards[0].reading.key,summary:cards[0].reading.text,key:revealKey(profile,date)};
   }
   function reroll(profile,date,secureRandom=root.crypto){if(!secureRandom?.getRandomValues)throw new Error('浏览器无法生成新的随机种子，请使用现代浏览器。');const old=signature(draw(profile,date));for(let i=0;i<32;i++){const words=new Uint32Array(4);secureRandom.getRandomValues(words);const next={...profile,tarotOverride:Array.from(words,n=>n.toString(16).padStart(8,'0')).join(''),revealed:null};if(signature(draw(next,date))!==old)return next;}throw new Error('未能生成不同的牌组，请稍后再试。');}
   root.Engine={ZODIACS,TAGS,normalizeNickname,hash,rng,zodiacFor,validateProfile,validateBirth,generateBirth,birthFor,birthChart,dayKey,identityKey,contextKey,tarotSeed,draw,signature,revealKey,daily,reroll};

@@ -1,5 +1,9 @@
 # 今日宜挂机 · 梅尔沃命运之书
 
+网站：https://melvor-oracle.github.io/
+
+主仓库：https://github.com/melvor-oracle/melvor-oracle.github.io
+
 面向 Melvor Idle 2 的非官方娱乐占卜网站：昵称生成虚构生辰，四柱与每日卦象提供取象背景，一键翻开三张塔罗，得到个人游戏宜忌。
 
 ## 第一版功能

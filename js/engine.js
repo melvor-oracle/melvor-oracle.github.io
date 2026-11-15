@@ -7,7 +7,16 @@
     ['libra','天秤座','♎',923,1023],['scorpio','天蝎座','♏',1024,1122],['sagittarius','射手座','♐',1123,1221],
     ['capricorn','摩羯座','♑',1222,119],['aquarius','水瓶座','♒',120,218],['pisces','双鱼座','♓',219,320]
   ].map(([id,name,symbol,start,end])=>({id,name,symbol,start,end}));
-  const TAGS={wood:['gather','prepare'],fish:['gather','rest'],mine:['gather','explore'],farm:['gather','rest'],smith:['craft','prepare'],cook:['craft','rest'],herb:['craft','learn'],melee:['battle','prepare'],ranged:['battle','learn'],magic:['battle','explore'],thief:['explore','gather'],bank:['prepare','rest']};
+  const TAGS={
+    wood:['gather','prepare'],fish:['gather','rest'],mine:['gather','explore'],farm:['gather','rest'],
+    smith:['craft','prepare'],cook:['craft','rest'],herb:['craft','learn'],
+    melee:['battle','prepare'],ranged:['battle','learn'],magic:['battle','explore'],thief:['explore','gather'],
+    fire:['craft','rest'],fletch:['craft','prepare'],craft:['craft','learn'],rune:['craft','prepare','learn'],
+    ranch:['gather','rest','prepare'],hunt:['gather','explore','prepare'],beast:['craft','explore'],
+    agility:['learn','prepare'],astro:['learn','rest'],summon:['learn','prepare','craft'],
+    build:['craft','prepare','rest'],archaeology:['explore','learn','gather'],enchant:['craft','learn'],
+    slayer:['battle','explore','prepare'],bank:['prepare','rest']
+  };
   const GAN_ELEMENT={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
   const HARMONY=['子丑','寅亥','卯戌','辰酉','巳申','午未'];
   const CLASH=['子午','丑未','寅申','卯酉','辰戌','巳亥'];

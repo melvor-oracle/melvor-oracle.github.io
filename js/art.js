@@ -27,6 +27,28 @@
   };
   function art(card){let shape=motifs[card.motif]||motifs.star;if(!card.major&&card.number>1&&card.number<=10){const marks=Array.from({length:card.number},(_,i)=>{let a=i/card.number*Math.PI*2;return `<circle cx="${100+72*Math.cos(a)}" cy="${111+86*Math.sin(a)}" r="2.2" fill="currentColor"/>`;}).join('');shape+=marks;}return `<svg viewBox="0 0 200 220" class="tarot-art${card.reversed?' is-reversed':''}" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round">${shape}</g><g fill="currentColor" opacity=".5"><circle cx="29" cy="73" r="1.5"/><circle cx="163" cy="40" r="1.5"/><circle cx="173" cy="166" r="1.5"/><circle cx="42" cy="167" r="1.5"/></g></svg>`;}
   const back=`<svg viewBox="0 0 200 250" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width=".9"><circle cx="100" cy="118" r="65"/><circle cx="100" cy="118" r="54"/><circle cx="100" cy="118" r="29"/><path d="M100 36v164M18 118h164M42 60l116 116M42 176L158 60M100 53l46 19 19 46-19 46-46 19-46-19-19-46 19-46zM100 53l46 111-111-46 111-46-46 111-46-111 111 46-111 46z" opacity=".55"/><path d="M86 106h28M86 118h11m6 0h11M86 130h28" stroke-width="3"/></g><path d="M100 12l3 8 8 3-8 3-3 8-3-8-8-3 8-3zM100 211l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="currentColor"/></svg>`;
-  function icon(name){const map={tree:'M12 2 5 11h3l-4 6h6v5h4v-5h6l-4-6h3z',fish:'M3 12c5-8 12-8 16 0-4 8-11 8-16 0Zm16 0 4-5v10z',pick:'M3 7c7-6 13-3 17 3M12 6 4 21M11 9 8 6',leaf:'M3 21 15 9M5 17C0 4 11 1 22 2c-1 11-4 21-17 15Z',anvil:'M2 6h20l-5 7H8L2 9Zm7 7v5H6v3h14v-3h-5v-5',pot:'M4 9h16v5c0 8-16 8-16 0Zm-2 1h2m16 0h2M6 5h12M12 2v3',flask:'M8 2h8m-6 0v7l-6 10q-1 3 3 3h10q4 0 3-3l-6-10V2M7 15h10',sword:'m17 2 5 0v5L9 20l-5-5zM3 12l9 9M2 22l4-4',bow:'M5 2q22 10 0 20L16 12zM2 12h20m-4-4 4 4-4 4',wand:'M4 21 18 7M14 2v6m-3-3h6m3 10v6m-3-3h6',key:'M15 9a5 5 0 1 0-5 5L2 22l-1-5 4-1 1-4',chest:'M3 9q0-7 9-7t9 7v12H3Zm0 0h18M10 9v5h4V9'};return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${map[name]||map.wand}"/></svg>`;}
-  root.Art={art,back,icon};
+  const icons={
+    tree:'M12 2 5 11h3l-4 6h6v5h4v-5h6l-4-6h3z',fish:'M3 12c5-8 12-8 16 0-4 8-11 8-16 0Zm16 0 4-5v10z',
+    pick:'M3 7c7-6 13-3 17 3M12 6 4 21M11 9 8 6',leaf:'M3 21 15 9M5 17C0 4 11 1 22 2c-1 11-4 21-17 15Z',
+    anvil:'M2 6h20l-5 7H8L2 9Zm7 7v5H6v3h14v-3h-5v-5',pot:'M4 9h16v5c0 8-16 8-16 0Zm-2 1h2m16 0h2M6 5h12M12 2v3',
+    flask:'M8 2h8m-6 0v7l-6 10q-1 3 3 3h10q4 0 3-3l-6-10V2M7 15h10',sword:'m17 2 5 0v5L9 20l-5-5zM3 12l9 9M2 22l4-4',
+    bow:'M5 2q22 10 0 20L16 12zM2 12h20m-4-4 4 4-4 4',wand:'M4 21 18 7M14 2v6m-3-3h6m3 10v6m-3-3h6',
+    key:'M15 9a5 5 0 1 0-5 5L2 22l-1-5 4-1 1-4',chest:'M3 9q0-7 9-7t9 7v12H3Zm0 0h18M10 9v5h4V9',
+    flame:'M13 2c1 6 7 8 7 13a8 8 0 0 1-16 0c0-3 2-5 4-7 0 4 2 4 2 4s4-5 3-10ZM12 13c-5 5-2 8 0 8s5-3 0-8Z',
+    arrow:'M3 21 20 4M14 4h6v6M3 15v6h6M6 12v6h6',
+    needle:'M6 20 17 3c2-2 4 0 2 2ZM16 7c9 2 4 10-1 9s-7 3-2 5',
+    rune:'m12 2 7 5v11l-7 4-7-4V7ZM12 6v12M9 9l6 6M15 9l-6 6',
+    fence:'M3 22V5l2-3 2 3v17M17 22V5l2-3 2 3v17M7 8h10M7 12h10M7 16h10M7 20h10',
+    track:'M8 13c-1 2-4 4-3 6s4 1 7 1 6 1 7-1-2-4-3-6c-2-2-6-2-8 0ZM4 7a2 3 0 1 0 0 6 2 3 0 1 0 0-6ZM9 2a2 3 0 1 0 0 6 2 3 0 1 0 0-6ZM15 2a2 3 0 1 0 0 6 2 3 0 1 0 0-6ZM20 7a2 3 0 1 0 0 6 2 3 0 1 0 0-6Z',
+    claw:'M5 3C1 13 3 19 6 21L9 5M12 2c-3 9-3 16 0 20l3-19M19 3c-2 8-2 13 0 17l3-13',
+    steps:'M7 2c-4 0-4 8-1 9s5-9 1-9ZM4 14l4 1-1 4-4-1ZM18 6c-4 0-4 8-1 9s5-9 1-9ZM15 18l4 1-1 3-4-1Z',
+    stars:'m9 2 2 5 5 2-5 2-2 5-2-5-5-2 5-2ZM18 13l1 3 3 1-3 1-1 3-1-3-3-1 3-1ZM19 2v4m-2-2h4M4 18v4m-2-2h4',
+    portal:'M3 21h18M5 21V10a7 7 0 0 1 14 0v11M8 21V10a4 4 0 0 1 8 0v11M12 11v7m-3-3h6',
+    house:'M2 11 12 2l10 9M5 9v13h14V9M10 22v-8h4v8M16 5V2h3v6',
+    relic:'M7 2h10M8 2v5c0 3-5 5-5 9s4 6 9 6 9-2 9-6-5-6-5-9V2M8 7h8M4 13h16M5 18h14M9 13l3 5 3-5',
+    gem:'m3 9 4-6h10l4 6-9 13ZM3 9h18M7 3l2 6 3 13 3-13 2-6M9 9l3-6 3 6',
+    target:'M12 3a9 9 0 1 0 9 9M12 7a5 5 0 1 0 5 5M12 12l9-9M16 3h5v5'
+  };
+  function icon(name){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name]||icons.wand}"/></svg>`;}
+  root.Art={art,back,icon,icons};
 })(typeof window!=='undefined'?window:globalThis);

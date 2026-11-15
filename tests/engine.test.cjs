@@ -5,10 +5,44 @@ const path=require('node:path');
 const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 global.Solar=require(path.join(root,'vendor/lunar.js')).Solar;
-for(const f of ['calendar.js','tarot.js','engine.js'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',f),'utf8'),{filename:f});
+for(const f of ['calendar.js','tarot.js','engine.js','art.js'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',f),'utf8'),{filename:f});
 const E=global.Engine,O=global.Oracle;
 const p={nickname:'月下旅人',zodiac:'capricorn',year:2000};
 const date='2026-11-15';
+test('activities cover the full announced MI2 roster without introducing MI1-only skills',()=>{
+  const expected=['Attack','Strength','Defence','Hitpoints','Ranged','Magic','Slayer','Prayer',
+    'Woodcutting','Firemaking','Fishing','Cooking','Mining','Smithing','Fletching','Crafting','Runecrafting',
+    'Farming','Ranching','Hunting','Herblore','Thieving','Agility','Beastcrafting','Astrology',
+    'Summoning','Construction','Archaeology','Enchantment'];
+  assert.deepEqual(O.SKILLS.map(s=>s.en).sort(),expected.sort());
+  const covered=new Set(O.ACTIVITIES.flatMap(a=>a.skills));
+  assert.deepEqual([...covered].sort(),O.SKILLS.map(s=>s.id).sort());
+  for(const [id,name] of [['crafting','制造'],['beastcrafting','兽材工艺'],['agility','灵巧']]){
+    assert.equal(O.SKILLS.find(s=>s.id===id).name,name);
+    assert.equal(O.ACTIVITIES.find(a=>a.skills.includes(id)).name,name);
+  }
+});
+test('combat uses distinct activity slots instead of separate attack, strength, and defence recommendations',()=>{
+  const combat=O.ACTIVITIES.filter(a=>a.kind==='battle');
+  assert.deepEqual(combat.map(a=>a.id).sort(),['magic','melee','ranged','slayer']);
+  for(const id of ['attack','strength','defence'])assert.deepEqual(combat.filter(a=>a.skills.includes(id)).map(a=>a.id),['melee']);
+  for(const id of ['hitpoints','prayer'])assert.ok(combat.every(a=>a.skills.includes(id)));
+  for(const skill of O.SKILLS.filter(s=>!['hitpoints','prayer'].includes(s.id)))assert.equal(O.ACTIVITIES.filter(a=>a.skills.includes(skill.id)).length,1);
+  assert.deepEqual(O.ACTIVITIES.find(a=>a.id==='bank').skills,[]);
+  assert.equal(O.ACTIVITIES.length,26);
+});
+test('every activity has a reachable filter, original icon, complete advice, and supported tarot tags',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const filters=new Set([...html.matchAll(/data-filter="([^"]+)"/g)].map(m=>m[1]));
+  const tags=new Set(Tarot.deck.flatMap(c=>[...c.up.tags,...c.reverse.tags]));
+  assert.equal(new Set(O.ACTIVITIES.map(a=>a.id)).size,O.ACTIVITIES.length);
+  for(const a of O.ACTIVITIES){
+    assert.ok(filters.has(a.kind),a.id+' filter');assert.ok(Art.icons[a.icon],a.id+' icon');
+    assert.ok(a.good&&a.bad&&a.why,a.id+' readings');assert.ok(O.ELEMENTS.includes(a.element));
+    assert.ok(E.TAGS[a.id]?.length,a.id+' tags');assert.ok(E.TAGS[a.id].every(t=>tags.has(t)),a.id+' tag vocabulary');
+  }
+  assert.deepEqual(new Set(E.daily(p,date).activities.map(a=>a.id)),new Set(O.ACTIVITIES.map(a=>a.id)));
+});
 test('78 unique cards, 22 major and 56 minor, complete readings',()=>{
   assert.equal(Tarot.deck.length,78);assert.equal(new Set(Tarot.deck.map(c=>c.id)).size,78);assert.equal(Tarot.deck.filter(c=>c.major).length,22);
   for(const c of Tarot.deck)for(const side of ['up','reverse'])assert.ok(c[side].text&&c[side].tags.length);
